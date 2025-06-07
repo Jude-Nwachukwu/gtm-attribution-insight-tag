@@ -8,9 +8,9 @@ A powerful GTM custom **tag template** that captures traffic source data and ad 
 
 The **Attribution Insight Tag** automatically collects UTM parameters and common ad click identifiers from your URL (e.g., `gclid`, `fbclid`, `msclkid`), infers missing data from the referrer or fallback logic, and stores these values:
 
-* As a single or multiple cookies
-* In browser localStorage
-* In the dataLayer for use in GTM or GA4
+* As a **single cookie** or **separate cookies per data point**
+* In browser **localStorage**
+* In the **dataLayer** for use in GTM or GA4
 
 ---
 
@@ -18,17 +18,18 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 
 * Captures key traffic and campaign data: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, and `utm_id`
 * Supports major ad click identifiers (e.g., `gclid`, `fbclid`, `ttclid`, etc.)
-* Optionally stores data in:
+* Configurable cookie strategy: single cookie or separate cookies with optional prefix
+* Smart case-insensitive matching of query parameters
+* Stores values in:
 
   * A single JSON cookie
   * Separate cookies for each data point
   * localStorage
 * Pushes data to `dataLayer` using a default or custom event name
-* Built-in fallback logic for traffic source and medium
-* Smart referrer handling with optional referral exclusion list
-* Configurable cookie lifespan and domain/path
 * Avoids overwriting cookies with undefined or empty values
+* Referral exclusion support
 * Respects last non-direct click model when enabled
+* Fully customizable cookie domain/path and lifespan
 
 ---
 
@@ -45,12 +46,18 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 
 ## ⚙️ Configuration Guide
 
-Use the following field settings when configuring the tag:
+### 🔹 Cookie Storage Type
+
+* **Cookie Storage Type** (dropdown): Choose between:
+
+  * `Use Separate Cookie Name`: Store each data point in a separate cookie
+  * `Use Single Cookie Name`: Store all data in one cookie as an object
 
 ### 🔹 Cookie Settings
 
-* **Cookie Name**: (e.g., `utm_tracker`) – Sets the name for the cookie when not using separate cookies.
-* **Cookie Duration** & **Lifespan**: Define how long cookies persist (e.g., `30 days`).
+* **Cookie Name**: (used when single cookie is selected)
+* **Cookie Duration** & **Lifespan**: Define how long cookies persist (e.g., `30 days`)
+* **Use Custom Prefix**: If using separate cookies, this sets a prefix (e.g., `utm_`) for each cookie name
 
 ### 🔹 Traffic Data Options
 
@@ -66,53 +73,61 @@ Enable checkboxes for any traffic parameters you'd like to capture:
 
 Enable checkboxes to capture:
 
-* `gclid`, `fbclid`, `ttclid`, `li_fat_id`, `msclkid`, etc.
+* `gclid`, `fbclid`, `ttclid`, `li_fat_id`, `msclkid`, etc. — case-insensitive matching
 
 ### 🔹 Behavior Options
 
-* **Use Last-Non Direct**: Retrieves previous values for source/medium if traffic appears to be direct.
-* **Refresh Lifespan on Each Execution**: Resets cookie lifespan each time tag is fired.
-* **Skip Setting Cookie on Empty**: Avoid setting cookies when no valid value exists.
-* **Use Separate Cookies**: Store each data point in its own cookie.
-* **Use Custom Prefix**: Define a prefix for separate cookies (e.g., `lead_`).
+* **Use Last-Non Direct**: Enables last-non-direct model for source and medium
+* **Refresh Lifespan on Each Execution**: Resets cookie lifespan each time tag is fired
 
 ### 🔹 Local Storage and Data Layer
 
-* **Store in LocalStorage**: Also persist values in localStorage under key `gtm_dd_traffic_data`.
-* **Disable Data Layer Push**: Prevents automatic `dataLayer` push.
-* **Use Custom Event Name**: Overrides the default `gtm_dd_marketing_traffic_data` event name.
+* **Store in LocalStorage**: Also persist values in localStorage under key `gtm_dd_traffic_data`
+* **Disable Data Layer Push**: Prevents automatic `dataLayer` push
+* **Use Custom Event Name**: Overrides the default `gtm_dd_marketing_traffic_data` event name
 
 ### 🔹 Referral Exclusion
 
-* **Enable Referral Exclusion**: Enable filtering of internal domains (e.g., `stripe.com, paypal.com`).
+* **Enable Referral Exclusion**: Filter internal domains from being set as source
+* **Exclusion Domains**: Add comma-separated domains (e.g., `stripe.com, paypal.com`)
 
 ### 🔹 Domain & Path
 
-* Set custom domain or path if needed. Defaults to top-level domain and root path.
+* Set custom domain or path if needed. Defaults to top-level domain and root path
 
 ---
 
 ## 🧠 Logic Overview
 
-The tag evaluates data as follows:
+1. **Case-Insensitive Query Parsing**: Extracts UTM parameters and click identifiers from the URL regardless of case
+2. **UTM Parameter Evaluation**:
 
-1. **UTM Parameters First**: Captures UTM values from the URL (case-insensitive).
-2. **Click Identifiers**: Collects known ad click IDs (`gclid`, `fbclid`, etc.) from the URL.
-3. **Fallback for Source**:
+   * Uses query parameter if present
+   * Otherwise falls back to referrer or predefined click identifiers
+3. **Click Identifier Evaluation**:
 
-   * If `utm_source` is missing, checks `document.referrer`.
-   * If still missing, infers from known click identifiers (e.g., `gclid` → `google`).
-   * If no indicators, returns `direct`.
-4. **Fallback for Medium**:
+   * Stored if present in URL
+   * Not overwritten if not found on subsequent pages
+4. **Source & Medium Logic**:
 
-   * If `utm_medium` is missing, returns `referral` or `none`, unless click identifier indicates `cpc`.
-5. **Referral Exclusion**: Domains listed in the exclusion list are ignored as referrers.
-6. **Last-Non Direct Model**: If direct traffic is detected, and fallback is enabled, retrieves previous values from cookies or localStorage.
-7. **Storage**:
+   * `utm_source` and `utm_medium` are prioritized
+   * If absent, source is inferred from known identifiers (e.g., `gclid` = `google`)
+   * Medium inferred as `cpc` for known sources
+   * Source and medium are always lowercased
+5. **Referral Exclusion**:
 
-   * Writes data to a single JSON cookie or separate cookies.
-   * Writes to localStorage if enabled.
-8. **dataLayer Push**: Sends all collected data as a structured object to the dataLayer.
+   * If enabled, domains in the exclusion list are not considered as referrers
+6. **Last-Non Direct Fallback**:
+
+   * Source/medium fallback to cookie/localStorage only if traffic appears direct
+   * Applies also when UTM or click identifiers are missing
+7. **Storage Mechanics**:
+
+   * Cookies: either a single JSON object or individual cookies per field
+   * LocalStorage: saved as `gtm_dd_traffic_data` object
+8. **Data Layer Push**:
+
+   * Sent as structured object with `marketing_data`, `click_identifiers`, and metadata
 
 ---
 
@@ -120,15 +135,15 @@ The tag evaluates data as follows:
 
 ### 📄 Lead Source Tracking
 
-Capture traffic source and medium at form submission time by retrieving values from cookies using hidden form fields.
+Capture source and medium into hidden form fields for lead attribution using cookie/localStorage values.
 
 ### 🔁 Offline Conversion Tracking
 
-Send `gclid`, `fbclid`, etc. to your backend system for offline attribution via CRM or server-side processing.
+Send `gclid`, `fbclid`, and other identifiers to CRM/backend systems for offline event mapping.
 
-### 📊 Attribution Consistency
+### 📊 Funnel Attribution
 
-Store and reuse consistent traffic attribution across the funnel using cookies and localStorage.
+Track consistent campaign attribution across the user journey using stored cookie values.
 
 ---
 
@@ -140,7 +155,7 @@ Apache License 2.0
 
 ## 👨‍💻 Developed by
 
-Template built by **Jude** for [DumbData](https://dumbdata.co/)
+Template built by **Jude Nwachukwu Onyejekwe** for [DumbData](https://dumbdata.co/)
 
 ### 👉 Get Support or Raise an Issue
 
