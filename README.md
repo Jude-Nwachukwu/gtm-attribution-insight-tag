@@ -18,18 +18,20 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 
 * Captures key traffic and campaign data: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, and `utm_id`
 * Supports major ad click identifiers (e.g., `gclid`, `fbclid`, `ttclid`, etc.)
-* Configurable cookie strategy: single cookie or separate cookies with optional prefix
-* Smart case-insensitive matching of query parameters
-* Stores values in:
+* Configurable cookie strategy:
 
-  * A single JSON cookie
-  * Separate cookies for each data point
-  * localStorage
-* Pushes data to `dataLayer` using a default or custom event name
-* Avoids overwriting cookies with undefined or empty values
-* Referral exclusion support
-* Respects last non-direct click model when enabled
-* Fully customizable cookie domain/path and lifespan
+  * Single cookie (JSON format)
+  * Separate cookies per parameter, with optional custom prefix
+* Smart **case-insensitive** matching of query parameters
+* Values stored in:
+
+  * Cookie(s) (with refreshable expiration)
+  * LocalStorage (`gtm_dd_traffic_data`)
+* Supports referral domain exclusions
+* Smart UTM and click identifier prioritization
+* Fully customizable domain/path settings
+* DataLayer push with default or custom event name
+* Logic supports last-non-direct click model with intelligent override behavior
 
 ---
 
@@ -55,7 +57,7 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 
 ### 🔹 Cookie Settings
 
-* **Cookie Name**: (used when single cookie is selected)
+* **Cookie Name**: Used when "Single Cookie" is selected
 * **Cookie Duration** & **Lifespan**: Define how long cookies persist (e.g., `30 days`)
 * **Use Custom Prefix**: If using separate cookies, this sets a prefix (e.g., `utm_`) for each cookie name
 
@@ -73,22 +75,23 @@ Enable checkboxes for any traffic parameters you'd like to capture:
 
 Enable checkboxes to capture:
 
-* `gclid`, `fbclid`, `ttclid`, `li_fat_id`, `msclkid`, etc. — case-insensitive matching
+* `gclid`, `fbclid`, `ttclid`, `li_fat_id`, `msclkid`, `twclid`, `obclid`, etc.
+* Case-insensitive matching supported for all identifiers
 
 ### 🔹 Behavior Options
 
-* **Use Last-Non Direct**: Enables last-non-direct model for source and medium
+* **Use Last-Non Direct**: Enables last-non-direct model for source and medium; UTM and click identifiers override if present
 * **Refresh Lifespan on Each Execution**: Resets cookie lifespan each time tag is fired
 
 ### 🔹 Local Storage and Data Layer
 
-* **Store in LocalStorage**: Also persist values in localStorage under key `gtm_dd_traffic_data`
+* **Store in LocalStorage**: Also persist values in LocalStorage under key `gtm_dd_traffic_data`
 * **Disable Data Layer Push**: Prevents automatic `dataLayer` push
 * **Use Custom Event Name**: Overrides the default `gtm_dd_marketing_traffic_data` event name
 
 ### 🔹 Referral Exclusion
 
-* **Enable Referral Exclusion**: Filter internal domains from being set as source
+* **Enable Referral Exclusion**: Prevents selected domains from being recognized as referral source
 * **Exclusion Domains**: Add comma-separated domains (e.g., `stripe.com, paypal.com`)
 
 ### 🔹 Domain & Path
@@ -102,32 +105,32 @@ Enable checkboxes to capture:
 1. **Case-Insensitive Query Parsing**: Extracts UTM parameters and click identifiers from the URL regardless of case
 2. **UTM Parameter Evaluation**:
 
-   * Uses query parameter if present
-   * Otherwise falls back to referrer or predefined click identifiers
+   * If a UTM value is present, it is stored
+   * Missing UTM values default to `"none"`, not stored values
 3. **Click Identifier Evaluation**:
 
-   * Stored if present in URL
-   * Not overwritten if not found on subsequent pages
+   * If present, corresponding source and medium are inferred (e.g., `gclid` = `google / cpc`)
+   * Case-insensitive handling of identifiers
+   * Does not overwrite stored values unless present
 4. **Source & Medium Logic**:
 
-   * `utm_source` and `utm_medium` are prioritized
-   * If absent, source is inferred from known identifiers (e.g., `gclid` = `google`)
-   * Medium inferred as `cpc` for known sources
-   * Source and medium are always lowercased
+   * Prioritized in order: UTM → Click ID → Referrer → Stored → Direct/None
+   * Referrer used if not excluded and not direct
+   * Always lowercased
 5. **Referral Exclusion**:
 
-   * If enabled, domains in the exclusion list are not considered as referrers
-6. **Last-Non Direct Fallback**:
+   * Excluded domains are ignored in referrer evaluation
+6. **Last-Non Direct Logic**:
 
-   * Source/medium fallback to cookie/localStorage only if traffic appears direct
-   * Applies also when UTM or click identifiers are missing
+   * Only used if traffic is direct or excluded
+   * Prevents unwanted overwrites from internal navigation
 7. **Storage Mechanics**:
 
-   * Cookies: either a single JSON object or individual cookies per field
-   * LocalStorage: saved as `gtm_dd_traffic_data` object
+   * Single or separate cookie options supported
+   * LocalStorage: `gtm_dd_traffic_data`
 8. **Data Layer Push**:
 
-   * Sent as structured object with `marketing_data`, `click_identifiers`, and metadata
+   * Fires a structured event with `marketing_data`, `click_identifiers`, and `datalayer_source`
 
 ---
 
