@@ -16,7 +16,7 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 
 ## 🔧 Features
 
-* Captures key traffic and campaign data: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, and `utm_id`
+* Captures key traffic and campaign data: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_source_platform`, `utm_marketing_tactic`, `utm_creative_format` and `utm_id`
 * Supports major ad click identifiers (e.g., `gclid`, `fbclid`, `ttclid`, etc.)
 * **Supports custom click identifiers** (e.g., `awc`, `partnerid`, etc.) with optional source/medium mapping
 * Configurable cookie strategy:
