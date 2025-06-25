@@ -522,8 +522,7 @@ ___TEMPLATE_PARAMETERS___
 
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
-// GTM Custom Tag Template for Traffic & Click Identifier Storage
-// Author: Jude for DumbData (https://dumbdata.co/)
+// Created by DumbData (https://dumbdata.co/)
 
 // Dependencies
 const setCookie = require('setCookie');
@@ -1068,6 +1067,6 @@ scenarios: []
 
 ___NOTES___
 
-Created on 6/18/2025, 1:19:41 PM
+Created on 6/25/2025, 11:09:46 AM
 
 
