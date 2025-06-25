@@ -41,7 +41,7 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 ## 📥 How to Import to GTM
 
 1. Download the [template JSON file](#).
-2. In GTM, go to the **Templates** section under the **Admin** panel.
+2. In your web GTM container UI, go to the **Templates** section under the **Admin** panel.
 3. Click **New Tag Template**, then click the **3-dot menu** → **Import**.
 4. Upload the downloaded JSON file.
 5. Review and approve required permissions.
@@ -62,7 +62,7 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 
 * **Cookie Name**: Used when "Single Cookie" is selected
 * **Cookie Duration** & **Lifespan**: Define how long cookies persist (e.g., `30 days`)
-* **Use Custom Prefix**: If using separate cookies, this sets a prefix (e.g., `utm_`) for each cookie name
+* **Use Custom Prefix**: If using separate cookies, this sets a prefix (e.g., `utm_`) for each cookie name. If you don't use a custom cookie name prefix, it defaults to using the `gtm_dd_sep_` prefix.
 
 ### 🔹 Traffic Data Options
 
