@@ -1,0 +1,5 @@
+homepage: 'https://dumbdata.co/'
+documentation: 'https://github.com/Jude-Nwachukwu/gtm-attribution-insight-tag'
+versions:
+  - sha: 7415e00cf5838ddff65ff4a955a6feba5a5fad9e
+    changeNotes: Initial release.
