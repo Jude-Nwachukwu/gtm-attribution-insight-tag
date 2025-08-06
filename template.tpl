@@ -178,6 +178,69 @@ ___TEMPLATE_PARAMETERS___
         "checkboxText": "Traffic Marketing Tactic",
         "simpleValueType": true,
         "help": "Represents the utm_marketing_tactic."
+      },
+      {
+        "type": "CHECKBOX",
+        "name": "ddCustomUTMParameters",
+        "checkboxText": "Recognise Custom UTM Parameters",
+        "simpleValueType": true
+      },
+      {
+        "type": "SIMPLE_TABLE",
+        "name": "ddCustomUTMParametersMapping",
+        "displayName": "Mapping Custom UTM Parameters",
+        "simpleTableColumns": [
+          {
+            "defaultValue": "",
+            "displayName": "UTM Parameter",
+            "name": "dd_Custom_UTMParams",
+            "type": "SELECT",
+            "selectItems": [
+              {
+                "value": "dd_custom_utm_source",
+                "displayValue": "UTM Source"
+              },
+              {
+                "value": "dd_custom_utm_medium",
+                "displayValue": "UTM Medium"
+              },
+              {
+                "value": "dd_custom_utm_campaign",
+                "displayValue": "UTM Campaign"
+              },
+              {
+                "value": "dd_custom_utm_campaign_id",
+                "displayValue": "UTM Campaign ID"
+              },
+              {
+                "value": "dd_custom_utm_source_platform",
+                "displayValue": "UTM Source Platform"
+              },
+              {
+                "value": "dd_custom_utm_term",
+                "displayValue": "UTM Term"
+              },
+              {
+                "value": "dd_custom_utm_content",
+                "displayValue": "UTM Content"
+              }
+            ],
+            "valueValidators": []
+          },
+          {
+            "defaultValue": "",
+            "displayName": "Custom Parameters Query",
+            "name": "dd_Custom_UTMParamsQuery",
+            "type": "TEXT"
+          }
+        ],
+        "enablingConditions": [
+          {
+            "paramName": "ddCustomUTMParameters",
+            "paramValue": true,
+            "type": "EQUALS"
+          }
+        ]
       }
     ]
   },
@@ -541,7 +604,7 @@ const localStorage = require('localStorage');
 
 // Utility Functions
 function getQueryParam(name) {
-  const allParams = getQueryParameters(name.toLowerCase(), true) || [];
+  const allParams = getQueryParameters(name, true) || [];
   for (let i = 0; i < allParams.length; i++) {
     if (isValid(allParams[i])) {
       return decodeUri(allParams[i]);
@@ -618,8 +681,8 @@ const cookiePath = data.setCookiePath ? makeString(data.inputCookiePath) : '/';
 // -- Referral exclusion logic --
 const applyReferralExclusion = data.ddApplyReferralExclusion;
 const referralExclusions = applyReferralExclusion && isValid(data.ddReferalExlusionList)
-  ? data.ddReferalExlusionList.toLowerCase().split(',').map(s => s.trim())
-  : [];
+? data.ddReferalExlusionList.toLowerCase().split(',').map(s => s.trim())
+: [];
 
 // -- UTM Traffic Parameters --
 const trafficParams = {
@@ -633,6 +696,48 @@ const trafficParams = {
   utm_creative_format: { enabled: data.ddTrafficCreativeFormat, key: 'creative_format' },
   utm_marketing_tactic: { enabled: data.ddTrafficMarketingTactic, key: 'marketing_tactic' }
 };
+
+// -- Custom UTM Mapping Logic --
+const useCustomUTMs = data.ddCustomUTMParameters;
+let customUTMMap = {
+  utm_source: [],
+  utm_medium: [],
+  utm_campaign: [],
+  utm_id: [],
+  utm_content: [],
+  utm_term: [],
+  utm_source_platform: []
+};
+
+if (useCustomUTMs && getType(data.ddCustomUTMParametersMapping) === 'array') {
+  data.ddCustomUTMParametersMapping.forEach(row => {
+    if (!isValid(row.dd_Custom_UTMParams) || !isValid(row.dd_Custom_UTMParamsQuery)) return;
+
+    const utmKeyMap = {
+      dd_custom_utm_source: 'utm_source',
+      dd_custom_utm_medium: 'utm_medium',
+      dd_custom_utm_campaign: 'utm_campaign',
+      dd_custom_utm_campaign_id: 'utm_id',
+      dd_custom_utm_term: 'utm_term',
+      dd_custom_utm_content: 'utm_content',
+      dd_custom_utm_source_platform: 'utm_source_platform'
+    };
+
+    const target = utmKeyMap[row.dd_Custom_UTMParams];
+    if (target && trafficParams[target] && trafficParams[target].enabled) {
+      customUTMMap[target].push(row.dd_Custom_UTMParamsQuery);
+    }
+  });
+}
+
+function getCustomOrNativeQueryParam(utmParam) {
+  const customKeys = customUTMMap[utmParam] || [];
+  for (let i = 0; i < customKeys.length; i++) {
+    const val = getQueryParam(customKeys[i]);
+    if (isValid(val)) return val;
+  }
+  return getQueryParam(utmParam);
+}
 
 // -- Click Identifiers & Mappings --
 const clickIdentifiers = {
@@ -660,12 +765,25 @@ for (let i = 0; i < customClickIdRows.length; i++) {
   let row = customClickIdRows[i];
   let key = row.ddCustomClickIdentifierURLKey;
   if (!isValid(key)) continue;
-  let val = getQueryParameters(key, true)[0];
+  let val = getQueryParam(key);
   if (isValid(val)) {
     clickData[key] = val;
     detectedCustomClickKey = key;
-    if (isValid(row.ddCustomClickIdentifierSource)) customClickSource = row.ddCustomClickIdentifierSource;
-    if (isValid(row.ddCustomClickIdentifierMedium)) customClickMedium = row.ddCustomClickIdentifierMedium;
+
+
+    // Source and medium are optional
+
+    if (isValid(row.ddCustomClickIdentifierSource)) {
+
+      customClickSource = row.ddCustomClickIdentifierSource;
+
+    }
+
+    if (isValid(row.ddCustomClickIdentifierMedium)) {
+
+      customClickMedium = row.ddCustomClickIdentifierMedium;
+
+    } 
   } else {
     const existing = getFromExisting(key);
     if (isValid(existing)) clickData[key] = existing;
@@ -675,7 +793,7 @@ for (let i = 0; i < customClickIdRows.length; i++) {
 // -- Determine click source and medium --
 let detectedClickKey;
 for (let k in clickSources) {
-  if (clickIdentifiers[k] && isValid(getQueryParameters(k, true)[0])) {
+  if (clickIdentifiers[k] && isValid(getQueryParam(k))) {
     detectedClickKey = k;
     break;
   }
@@ -683,24 +801,36 @@ for (let k in clickSources) {
 const clickSource = detectedClickKey ? clickSources[detectedClickKey] : customClickSource;
 const clickMedium = detectedClickKey ? 'cpc' : customClickMedium;
 
-let trafficData = {};
+// -- Search Engine Logic --
+const searchEngines = [
+  'google.com', 'www.google.com', 'bing.com', 'www.bing.com',
+  'duckduckgo.com', 'www.duckduckgo.com', 'search.yahoo.com', 'www.search.yahoo.com',
+  'ecosia.org', 'www.ecosia.org', 'search.aol.com', 'www.search.aol.com',
+  'www.searchgpt.com', 'searchgpt.com', 'kagi.com', 'www.kagi.com', 'search.naver.com',
+  'yandex.com', 'www.yandex.com', 'search.brave.com', 'www.search.brave.com',
+  'qwant.com', 'www.qwant.com'
+];
+
 let pageHost = getUrl('host').toLowerCase();
 let currentDomain = getTopLevelDomainFromHost(pageHost);
-let referrerHost = (getReferrerUrl('host') || '').toLowerCase();
-if (!keepWWW && referrerHost.indexOf('www.') === 0) referrerHost = referrerHost.slice(4);
-const referrerDomain = getTopLevelDomainFromHost(referrerHost);
-const isReferralExcluded = referralExclusions.indexOf(referrerHost) !== -1;
-const isSameDomainReferral = referrerHost === pageHost || referrerDomain === currentDomain;
-const isNonDirect = clickSource || (referrerHost && !isReferralExcluded && !isSameDomainReferral);
+let rawReferrerHost = (getReferrerUrl('host') || '').toLowerCase();
+let normalizedReferrerDomain = getTopLevelDomainFromHost(rawReferrerHost);
+let referrerHost = keepWWW ? rawReferrerHost : (rawReferrerHost.indexOf('www.') === 0 ? rawReferrerHost.slice(4) : rawReferrerHost);
+let isSearchEngineReferral = searchEngines.indexOf(rawReferrerHost) !== -1;
+
+const isReferralExcluded = referralExclusions.indexOf(rawReferrerHost) !== -1;
+const isSameDomainReferral = rawReferrerHost === pageHost || normalizedReferrerDomain === currentDomain;
+const isNonDirect = clickSource || (rawReferrerHost && !isReferralExcluded && !isSameDomainReferral);
 
 // -- Traffic Source Logic --
+let trafficData = {};
 if (data.ddTrafficSource) {
-  let source = getQueryParam('utm_source');
+  let source = getCustomOrNativeQueryParam('utm_source');
   if (isValid(source)) {
     trafficData.source = makeString(source).toLowerCase();
   } else if (isValid(clickSource)) {
     trafficData.source = makeString(clickSource);
-  } else if (!isReferralExcluded && !isSameDomainReferral && referrerHost) {
+  } else if (!isReferralExcluded && !isSameDomainReferral && rawReferrerHost) {
     trafficData.source = makeString(referrerHost).toLowerCase();
   } else if (checkCookieLocalStorageFirst && !isNonDirect) {
     const existingSource = getFromExisting('source');
@@ -710,15 +840,14 @@ if (data.ddTrafficSource) {
   }
 }
 
-// -- Traffic Medium Logic --
 if (data.ddTrafficMedium) {
-  let medium = getQueryParam('utm_medium');
+  let medium = getCustomOrNativeQueryParam('utm_medium');
   if (isValid(medium)) {
     trafficData.medium = makeString(medium).toLowerCase();
   } else if (isValid(clickMedium)) {
     trafficData.medium = makeString(clickMedium);
-  } else if (!isReferralExcluded && !isSameDomainReferral && referrerHost) {
-    trafficData.medium = 'referral';
+  } else if (!isReferralExcluded && !isSameDomainReferral && rawReferrerHost) {
+    trafficData.medium = isSearchEngineReferral ? 'organic' : 'referral';
   } else if (checkCookieLocalStorageFirst && !isNonDirect) {
     const existingMedium = getFromExisting('medium');
     trafficData.medium = isValid(existingMedium) ? makeString(existingMedium).toLowerCase() : 'none';
@@ -731,7 +860,7 @@ if (data.ddTrafficMedium) {
 Object.keys(trafficParams).forEach(param => {
   const conf = trafficParams[param];
   if (!conf.enabled) return;
-  const val = getQueryParam(param);
+  const val = getCustomOrNativeQueryParam(param);
   if (isValid(val)) trafficData[conf.key] = val;
   else if (param === 'utm_source' || param === 'utm_medium') return;
   else trafficData[conf.key] = 'none';
@@ -740,7 +869,7 @@ Object.keys(trafficParams).forEach(param => {
 // -- Click Identifier Capture --
 Object.keys(clickIdentifiers).forEach(key => {
   if (!clickIdentifiers[key]) return;
-  const val = getQueryParameters(key, true)[0];
+  const val = getQueryParam(key);
   if (isValid(val)) clickData[key] = val;
   else {
     const existing = getFromExisting(key);
