@@ -1,10 +1,11 @@
-homepage: "https://dumbdata.co/"
-documentation: "https://github.com/Jude-Nwachukwu/gtm-attribution-insight-tag"
+---
+homepage: https://dumbdata.co/
+documentation: https://github.com/Jude-Nwachukwu/gtm-attribution-insight-tag
 versions:
-# Latest version
+# LATEST VERSION
   - sha: 9a3933109d9783840e29e7f509a2f901700c9a9a
-    changeNotes: Custom UTM mapping and search engine traffic.
-    
- # Initial version
-   - sha: 7415e00cf5838ddff65ff4a955a6feba5a5fad9e
+    changeNotes: Support custom utm mapping and search engine grouping.
+
+#INITIAL VERSION
+  - sha: 7415e00cf5838ddff65ff4a955a6feba5a5fad9e
     changeNotes: Initial release.
