@@ -17,6 +17,8 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 ## 🔧 Features
 
 * Captures key traffic and campaign data: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_source_platform`, `utm_marketing_tactic`, `utm_creative_format` and `utm_id`
+* **🆕** Classifies referral traffic and reclassifies known search engine domains as **organic** instead of referral
+* **🆕** Supports **custom UTM parameter mapping**, allowing you to define your own UTM naming or analytics vendor-adapted syntax (e.g. `mtm_source`, `mtm_campaign`, `pk_medium`, `mtm_id`, `pk_source`, etc.) and map them to standard parameters like `utm_source`, `utm_medium`, etc.
 * Supports major ad click identifiers (e.g., `gclid`, `fbclid`, `ttclid`, etc.)
 * **Supports custom click identifiers** (e.g., `awc`, `partnerid`, etc.) with optional source/medium mapping
 * Configurable cookie strategy:
@@ -37,6 +39,7 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 * Automatically clears out-of-date UTM data while preserving updated fields
 
 ---
+
 
 ## 📥 How to Import to GTM
 
@@ -74,6 +77,17 @@ Enable checkboxes for any traffic parameters you'd like to capture:
 * **Campaign ID** (`utm_id`)
 * **Term**, **Content** – Additional UTM fields
 
+#### 🆕 Custom UTM Parameter Mapping
+
+The Attribution Insight Tag now supports **custom UTM parameter mapping**, enabling teams with non-standard URL parameter naming conventions to normalize data into standard UTM fields. For instance, if your URLs use `src=my_source` instead of `utm_source=my_source`, you can configure the tag to interpret `src` as `utm_source`. This ensures consistent attribution and analytics reporting without requiring changes to your URL structures.
+
+When you check the **"Recognise Custom UTM Parameters"** option. You can define your mappings using the **Custom UTM Mappings** table, where:
+
+- The **URL Parameter Key** column contains your custom parameter (e.g., `mtm_source`, `mtm_campaign`, `pk_medium`, `mtm_id`, `<your own query>`)
+- The **Mapped UTM Field** column should be one of the standard fields (`utm_source`, `utm_medium`, `utm_campaign`, `utm_id`, `utm_source_platform`, etc.)
+
+This mapping is **case-sensitive** and only overrides the specific UTM fields it maps to in the absence of the UTM parameter, which means you can use your standard UTM naming syntax and your own custom syntax. to—unmapped parameters remain unaffected.
+
 ### 🔹 Ad Click Identifiers
 
 Enable checkboxes to capture:
@@ -110,7 +124,7 @@ Enable checkboxes to capture:
 
 1. **Case-Insensitive UTM Parsing**:
 
-   * UTM parameters are handled without regard to casing
+   * UTM parameters are handled without regard to casing, with a check for any use of custom UTM mapping.
 
 2. **Case-Sensitive Click Identifier Parsing**:
 
