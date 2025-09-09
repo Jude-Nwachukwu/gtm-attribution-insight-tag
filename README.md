@@ -17,8 +17,10 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 ## 🔧 Features
 
 * Captures key traffic and campaign data: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_source_platform`, `utm_marketing_tactic`, `utm_creative_format` and `utm_id`
-* **🆕** Classifies referral traffic and reclassifies known search engine domains as **organic** instead of referral
-* **🆕** Supports **custom UTM parameter mapping**, allowing you to define your own UTM naming or analytics vendor-adapted syntax (e.g. `mtm_source`, `mtm_campaign`, `pk_medium`, `mtm_id`, `pk_source`, etc.) and map them to standard parameters like `utm_source`, `utm_medium`, etc.
+* Classifies referral traffic and reclassifies known search engine domains as **organic** instead of referral
+* Supports **custom UTM parameter mapping**, allowing you to define your own UTM naming or analytics vendor-adapted syntax (e.g. `mtm_source`, `mtm_campaign`, `pk_medium`, `mtm_id`, `pk_source`, etc.) and map them to standard parameters like `utm_source`, `utm_medium`, etc.
+* **🆕** Supports AIO (AI Overview) Traffic Sources
+* **🆕** Fixed persistence issues for the following traffic information (campaign, campaign ID, term, content, source platform, marketing tactic, and creative format)
 * Supports major ad click identifiers (e.g., `gclid`, `fbclid`, `ttclid`, etc.)
 * **Supports custom click identifiers** (e.g., `awc`, `partnerid`, etc.) with optional source/medium mapping
 * Configurable cookie strategy:
@@ -77,7 +79,31 @@ Enable checkboxes for any traffic parameters you'd like to capture:
 * **Campaign ID** (`utm_id`)
 * **Term**, **Content** – Additional UTM fields
 
-#### 🆕 Custom UTM Parameter Mapping
+### **🆕** AI Overview Traffic Sources
+
+The Attribution Insight Tag now supports classifying **AI Overview (AIO) traffic sources**, such as **Featured Snippets**, **People Also Ask**, and **Google's AI Overviews**.  
+These traffic sources often rely on special **Text Fragments** in the URL (after `#:~:text=`), which highlight the portion of the page the user was sent to.
+
+Unlike the standard GTM `getUrl` custom template core API (`document.location.href`), which only returns the visible browser URL due to privacy reasons, the AIO detection uses the **Performance API** to capture the full navigation entry, ensuring text fragments are retained.
+
+---
+
+### ⚙️ How to Configure AIO Tracking
+
+1. In the **AIT tag template**, if you have **Traffic Source** enabled, you'll have to enable the **AIO Traffic Source Detection** option.  
+2. In the field **`URL Text Fragment (after #:~:text=)`**, provide a GTM **Custom JavaScript Variable** that extracts the text fragment from the navigation entry.  
+
+Use this exact code in your **Custom JavaScript Variable**:
+
+```javascript
+function() {
+  var aioURLCheckVar = performance.getEntries()[0].name;
+  return aioURLCheckVar;
+}
+
+```
+
+#### Custom UTM Parameter Mapping
 
 The Attribution Insight Tag now supports **custom UTM parameter mapping**, enabling teams with non-standard URL parameter naming conventions to normalize data into standard UTM fields. For instance, if your URLs use `src=my_source` instead of `utm_source=my_source`, you can configure the tag to interpret `src` as `utm_source`. This ensures consistent attribution and analytics reporting without requiring changes to your URL structures.
 
@@ -186,6 +212,9 @@ Send `gclid`, `fbclid`, and other identifiers to CRM/backend systems for offline
 
 Track consistent campaign attribution across the user journey using stored cookie values.
 
+### 🔎 Debugging Attribution Issues
+
+You can also use this **Attribution Insight Tag** GTM Template to send your own attribution data along with your events, which can later be utilized to troubleshoot attribution issues.
 ---
 
 ## 📄 License
