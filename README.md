@@ -215,6 +215,7 @@ Track consistent campaign attribution across the user journey using stored cooki
 ### 🔎 Debugging Attribution Issues
 
 You can also use this **Attribution Insight Tag** GTM Template to send your own attribution data along with your events, which can later be utilized to troubleshoot attribution issues.
+
 ---
 
 ## 📄 License
