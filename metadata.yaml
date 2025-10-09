@@ -3,10 +3,12 @@ homepage: https://dumbdata.co/
 documentation: https://github.com/Jude-Nwachukwu/gtm-attribution-insight-tag
 versions:
 # LATEST VERSION
-  - sha: 6d814feb9de9405fc8faec2e886eb6973aa8aba0
-    changeNotes: Aio tracking support and fixes.
+  - sha: 3dfdf52fa59ef5a40f5a33455d83581463eae12a
+    changeNotes: First click attribution support and fix.
 
 # INITIAL VERSION
+  - sha: 6d814feb9de9405fc8faec2e886eb6973aa8aba0
+    changeNotes: Aio tracking support and fixes.
   - sha: 9a3933109d9783840e29e7f509a2f901700c9a9a
     changeNotes: Custom utm mapping support.
   - sha: 7415e00cf5838ddff65ff4a955a6feba5a5fad9e
