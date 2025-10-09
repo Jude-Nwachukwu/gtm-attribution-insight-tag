@@ -567,6 +567,164 @@ ___TEMPLATE_PARAMETERS___
   },
   {
     "type": "GROUP",
+    "name": "ddFirstClickConfigGroup",
+    "displayName": "Configure The Support For First Click Attribution",
+    "groupStyle": "ZIPPY_CLOSED",
+    "subParams": [
+      {
+        "type": "LABEL",
+        "name": "ddFirstClickAttributionText",
+        "displayName": "💡 This setting is optional, only enable if you want to use first click attribution alongside the last click model you\u0027ve configured\u003cbr\u003e\u003cbr\u003e"
+      },
+      {
+        "type": "CHECKBOX",
+        "name": "ddFirstClickConfigSettings",
+        "checkboxText": "Enable Support for First Click Attribution Model",
+        "simpleValueType": true
+      },
+      {
+        "type": "SELECT",
+        "name": "ddFirstClickAttributionStorageType",
+        "displayName": "First Click Attribution Cookie Storage Type",
+        "macrosInSelect": false,
+        "selectItems": [
+          {
+            "value": "ddFirstClickSeparateCookie",
+            "displayValue": "Use Separate Cookie Name"
+          },
+          {
+            "value": "ddFirstClickSingleCookie",
+            "displayValue": "Use Single Cookie Name"
+          }
+        ],
+        "simpleValueType": true,
+        "help": "",
+        "enablingConditions": [
+          {
+            "paramName": "ddFirstClickConfigSettings",
+            "paramValue": true,
+            "type": "EQUALS"
+          }
+        ]
+      },
+      {
+        "type": "CHECKBOX",
+        "name": "ddUseFirstClickAttributionCustomPrefixName",
+        "checkboxText": "Use a custom prefix for each first click attribution cookie name.",
+        "simpleValueType": true,
+        "help": "Enable this to apply a custom prefix to each cookie name when using separate cookies for traffic data. Without enabling this each cookie name have the \"first_click_attr_gtm_dd_sep_\" prefix",
+        "enablingConditions": [
+          {
+            "paramName": "ddFirstClickAttributionStorageType",
+            "paramValue": "ddFirstClickSeparateCookie",
+            "type": "EQUALS"
+          }
+        ]
+      },
+      {
+        "type": "TEXT",
+        "name": "ddCustomFirstClickAttributionCookiePrefixNameCookie",
+        "displayName": "Custom Cookie Prefix Name",
+        "simpleValueType": true,
+        "enablingConditions": [
+          {
+            "paramName": "ddUseFirstClickAttributionCustomPrefixName",
+            "paramValue": true,
+            "type": "EQUALS"
+          }
+        ],
+        "help": "Enter the prefix to use for first click attribution cookie names when creating separate cookies for selected traffic data points.",
+        "valueHint": "e.g, first_click_attr_",
+        "valueValidators": [
+          {
+            "type": "NON_EMPTY"
+          }
+        ]
+      },
+      {
+        "type": "LABEL",
+        "name": "ddFirstClickAttributionSingleCookieSizeWarning",
+        "displayName": "🚩Using a single cookie can significantly increase its size, which may lead to issues. 🚨\u003cbr\u003e\u003cbr\u003e",
+        "enablingConditions": [
+          {
+            "paramName": "ddFirstClickAttributionStorageType",
+            "paramValue": "ddFirstClickSingleCookie",
+            "type": "EQUALS"
+          }
+        ]
+      },
+      {
+        "type": "TEXT",
+        "name": "ddFirstClickAttributionCookieName",
+        "displayName": "First Click Attribution Cookie Name",
+        "simpleValueType": true,
+        "enablingConditions": [
+          {
+            "paramName": "ddFirstClickAttributionStorageType",
+            "paramValue": "ddFirstClickSingleCookie",
+            "type": "EQUALS"
+          }
+        ],
+        "help": "Specify the name of the cookie to be set or created in the user\u0027s browser.",
+        "valueHint": "e.g., gtm_cookie_first_attr_name",
+        "valueValidators": [
+          {
+            "type": "NON_EMPTY"
+          }
+        ]
+      },
+      {
+        "type": "TEXT",
+        "name": "ddFirstClickAttributionCookieStorageDaysLifeSpan",
+        "displayName": "First-Click Attribution Cookie Storage Duration (in Days)",
+        "simpleValueType": true,
+        "help": "This is where you specify the number of days the first-click attribution data should be stored. The minimum value is 1 day. Please note that browser cookie restrictions may affect this duration.",
+        "enablingConditions": [
+          {
+            "paramName": "ddFirstClickConfigSettings",
+            "paramValue": true,
+            "type": "EQUALS"
+          }
+        ],
+        "valueValidators": [
+          {
+            "type": "NON_EMPTY"
+          }
+        ],
+        "valueHint": "e.g, 1"
+      },
+      {
+        "type": "GROUP",
+        "name": "ddIncludeFirstClickAtributionInDataLayer",
+        "displayName": "",
+        "groupStyle": "NO_ZIPPY",
+        "subParams": [
+          {
+            "type": "CHECKBOX",
+            "name": "ddFirstClickAttributionDataLayer",
+            "checkboxText": "Include First Click Attribution In The Data Layer Push",
+            "simpleValueType": true,
+            "enablingConditions": [
+              {
+                "paramName": "ddDontPushToDataLayer",
+                "paramValue": false,
+                "type": "EQUALS"
+              }
+            ]
+          }
+        ],
+        "enablingConditions": [
+          {
+            "paramName": "ddFirstClickConfigSettings",
+            "paramValue": true,
+            "type": "EQUALS"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "GROUP",
     "name": "ddOptionalAdvanceConfig",
     "displayName": "Advanced Configuration (Optional)",
     "groupStyle": "ZIPPY_CLOSED",
@@ -817,7 +975,7 @@ for (let i = 0; i < customClickIdRows.length; i++) {
   if (!isValid(key)) continue;
   let val = getQueryParam(key);
   if (isValid(val)) {
-    clickData[key] = val;
+    clickData[key] = makeString(val);   // normalize to string
     detectedCustomClickKey = key;
 
     // Source and medium are optional
@@ -829,7 +987,7 @@ for (let i = 0; i < customClickIdRows.length; i++) {
     } 
   } else {
     const existing = getFromExisting(key);
-    if (isValid(existing)) clickData[key] = existing;
+    if (isValid(existing)) clickData[key] = makeString(existing);  // normalize to string
   }
 }
 
@@ -939,10 +1097,10 @@ Object.keys(trafficParams).forEach(param => {
 Object.keys(clickIdentifiers).forEach(key => {
   if (!clickIdentifiers[key]) return;
   const val = getQueryParam(key);
-  if (isValid(val)) clickData[key] = val;
+  if (isValid(val)) clickData[key] = makeString(val);   // normalize to string
   else {
     const existing = getFromExisting(key);
-    if (isValid(existing)) clickData[key] = existing;
+    if (isValid(existing)) clickData[key] = makeString(existing);  // normalize to string
   }
 });
 
@@ -975,18 +1133,190 @@ if (useSeparateCookies) {
 }
 
 // -- Local Storage Logic --
+
 if (pushToLocalStorage && localStorage) {
+
   localStorage.setItem('gtm_dd_traffic_data', JSON.stringify(localData));
+
 }
 
-// -- Data Layer Push Logic --
-if (!suppressDL) {
-  dlPush({
-    event: dlEventName,
+// -- First-Click Attribution Logic --
+if (data.ddFirstClickConfigSettings) {
+  // Extract user configuration
+  const firstClickStorageType = data.ddFirstClickAttributionStorageType;
+  const useFirstClickSeparate = firstClickStorageType === 'ddFirstClickSeparateCookie';
+  const useFirstClickSingle = firstClickStorageType === 'ddFirstClickSingleCookie';
+  const firstClickCookieName = makeString(data.ddFirstClickAttributionCookieName);
+  const useCustomFirstPrefix = data.ddUseFirstClickAttributionCustomPrefixName;
+  const customFirstPrefix = useCustomFirstPrefix
+    ? makeString(data.ddCustomFirstClickAttributionCookiePrefixNameCookie)
+    : 'first_click_attr_gtm_dd_sep_';
+  const firstClickDays = makeNumber(data.ddFirstClickAttributionCookieStorageDaysLifeSpan);
+  const firstClickMaxAge = firstClickDays * 86400;
+  const firstClickOptions = { domain: cookieDomain, path: cookiePath, 'max-age': firstClickMaxAge };
+  const lsKey = 'gtm_dd_first_click_attr_data';
+
+  // Define what we want to persist
+  const firstClickData = {
     marketing_data: trafficData,
     click_identifiers: clickData,
-    datalayer_source: 'dd gtm custom tag template'
-  });
+    data_point_source: 'dd gtm custom tag template (first-click)'
+  };
+
+  // Helper to check existing first-click cookies
+  const hasFirstClickCookies = function () {
+    if (useFirstClickSeparate) {
+      const keys = Object.keys(trafficData).concat(Object.keys(clickData));
+      for (let i = 0; i < keys.length; i++) {
+        const val = getCookieValues(customFirstPrefix + keys[i]);
+        if (isValid(val)) return true;
+      }
+      return false;
+    } else if (useFirstClickSingle) {
+      const val = getCookieValues(firstClickCookieName);
+      return isValid(val);
+    }
+    return false;
+  };
+
+  // Check for existing cookie and/or localStorage
+  const existingFirstClick = hasFirstClickCookies();
+  const lsVal = localStorage.getItem(lsKey);
+  const hasLSData = isValid(lsVal);
+
+  // --- Restoration or Creation Logic ---
+  if (!existingFirstClick) {
+    if (hasLSData) {
+      // Restore from LocalStorage
+      const parsedLS = JSON.parse(lsVal);
+      if (useFirstClickSeparate) {
+        const traffic = parsedLS.marketing_data || {};
+        const clicks = parsedLS.click_identifiers || {};
+        Object.keys(traffic).forEach(k =>
+          setCookie(customFirstPrefix + k, makeString(traffic[k]), firstClickOptions)
+        );
+        Object.keys(clicks).forEach(k =>
+          setCookie(customFirstPrefix + k, makeString(clicks[k]), firstClickOptions)
+        );
+      } else if (useFirstClickSingle) {
+        setCookie(firstClickCookieName, JSON.stringify(parsedLS), firstClickOptions);
+      }
+    } else {
+      // Create new first-click cookies and LS
+      if (useFirstClickSeparate) {
+        Object.keys(trafficData).forEach(k =>
+          setCookie(customFirstPrefix + k, makeString(trafficData[k]), firstClickOptions)
+        );
+        Object.keys(clickData).forEach(k =>
+          setCookie(customFirstPrefix + k, makeString(clickData[k]), firstClickOptions)
+        );
+      } else if (useFirstClickSingle) {
+        setCookie(firstClickCookieName, JSON.stringify(firstClickData), firstClickOptions);
+      }
+      localStorage.setItem(lsKey, JSON.stringify(firstClickData));
+    }
+  } else {
+    // Extend expiration if first-click cookie exists
+    if (useFirstClickSeparate) {
+      const keys = Object.keys(trafficData).concat(Object.keys(clickData));
+      for (let i = 0; i < keys.length; i++) {
+        const cookieKey = customFirstPrefix + keys[i];
+        const val = getCookieValues(cookieKey);
+        if (isValid(val)) setCookie(cookieKey, makeString(val), firstClickOptions);
+      }
+    } else if (useFirstClickSingle) {
+      const val = getCookieValues(firstClickCookieName);
+      if (isValid(val)) setCookie(firstClickCookieName, val, firstClickOptions);
+    }
+    // Extend LocalStorage lifetime
+    if (hasLSData) localStorage.setItem(lsKey, lsVal);
+  }
+
+  // --- Handle missing click identifiers if first-click attribution exists ---
+  if (existingFirstClick || hasLSData) {
+    let parsedFirstClick = hasLSData ? JSON.parse(lsVal) : {};
+    let existingClicks = parsedFirstClick.click_identifiers || {};
+
+    let newClickAdded = false;
+    Object.keys(clickData).forEach(k => {
+      if (!isValid(existingClicks[k]) && isValid(clickData[k])) {
+        // Create missing first-click click identifier cookie
+        if (useFirstClickSeparate) {
+          setCookie(customFirstPrefix + k, makeString(clickData[k]), firstClickOptions);
+        } else if (useFirstClickSingle) {
+          existingClicks[k] = makeString(clickData[k]);
+        }
+        existingClicks[k] = makeString(clickData[k]);
+        newClickAdded = true;
+      }
+    });
+
+    // Update LS and combined cookie if new identifiers added
+    if (newClickAdded) {
+      parsedFirstClick.click_identifiers = existingClicks;
+      localStorage.setItem(lsKey, JSON.stringify(parsedFirstClick));
+      if (useFirstClickSingle) {
+        setCookie(firstClickCookieName, JSON.stringify(parsedFirstClick), firstClickOptions);
+      }
+    }
+  }
+
+  // --- Load actual first-click data for Data Layer push ---
+  let parsedFirstClickData;
+  if (hasLSData) {
+    parsedFirstClickData = JSON.parse(lsVal);
+  } else if (existingFirstClick && useFirstClickSingle) {
+    const val = getCookieValues(firstClickCookieName);
+    if (isValid(val)) parsedFirstClickData = JSON.parse(val);
+  } else if (existingFirstClick && useFirstClickSeparate) {
+    const traffic = {};
+    const keys = Object.keys(trafficData);
+    keys.forEach(k => {
+      const val = getCookieValues(customFirstPrefix + k);
+      if (isValid(val)) traffic[k] = val;
+    });
+    parsedFirstClickData = {
+      marketing_data: traffic,
+      data_point_source: 'DD GTM Attribution Insight Tag template'
+    };
+  }
+
+  if (!parsedFirstClickData) {
+    parsedFirstClickData = {
+      marketing_data: trafficData,
+      data_point_source: 'DD GTM Attribution Insight Tag template'
+    };
+  }
+
+  // --- Always Push to Data Layer (include first-click data conditionally) ---
+  if (!suppressDL) {
+    const dlPayload = {
+      event: dlEventName,
+      marketing_data: trafficData,
+      click_identifiers: clickData,
+      datalayer_source: 'DD GTM Attribution Insight Tag custom template'
+    };
+
+    // Include first-click attribution only when include in data layer checkbox is enabled
+    if (data.ddFirstClickAttributionDataLayer) {
+      dlPayload.first_click_attribution = {
+        marketing_data: parsedFirstClickData.marketing_data || {},
+        data_point_source: parsedFirstClickData.data_point_source
+      };
+    }
+
+    dlPush(dlPayload);
+  }
+} else {
+  // --- Default Data Layer Push (if first-click attribution data layer option is not enabled) ---
+  if (!suppressDL) {
+    dlPush({
+      event: dlEventName,
+      marketing_data: trafficData,
+      click_identifiers: clickData,
+      datalayer_source: 'DD GTM Attribution Insight Tag custom template'
+    });
+  }
 }
 
 data.gtmOnSuccess();
@@ -1234,6 +1564,37 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 1,
                     "string": "gtm_dd_traffic_data"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "gtm_dd_first_click_attr_data"
                   },
                   {
                     "type": 8,
