@@ -19,8 +19,8 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 * Captures key traffic and campaign data: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_source_platform`, `utm_marketing_tactic`, `utm_creative_format` and `utm_id`
 * Classifies referral traffic and reclassifies known search engine domains as **organic** instead of referral
 * Supports **custom UTM parameter mapping**, allowing you to define your own UTM naming or analytics vendor-adapted syntax (e.g. `mtm_source`, `mtm_campaign`, `pk_medium`, `mtm_id`, `pk_source`, etc.) and map them to standard parameters like `utm_source`, `utm_medium`, etc.
-* **🆕** Supports AIO (AI Overview) Traffic Sources
-* **🆕** Fixed persistence issues for the following traffic information (campaign, campaign ID, term, content, source platform, marketing tactic, and creative format)
+* Supports AIO (AI Overview) Traffic Sources
+* Fixed persistence issues for the following traffic information (campaign, campaign ID, term, content, source platform, marketing tactic, and creative format)
 * Supports major ad click identifiers (e.g., `gclid`, `fbclid`, `ttclid`, etc.)
 * **Supports custom click identifiers** (e.g., `awc`, `partnerid`, etc.) with optional source/medium mapping
 * Configurable cookie strategy:
@@ -39,6 +39,12 @@ The **Attribution Insight Tag** automatically collects UTM parameters and common
 * DataLayer push with default or custom event name
 * Logic supports last-non-direct click model with intelligent override behavior
 * Automatically clears out-of-date UTM data while preserving updated fields
+* 🆕 **First-Click Attribution Support**  
+  Enables persistent storage of a visitor’s **initial traffic source and medium** alongside their **click identifiers**.  
+  This enhancement allows you to distinguish between a user’s **first touchpoint** and **last non-direct click** across sessions for improved attribution accuracy.
+* 🆕 **Normalized Click Identifier Handling**  
+  All **native and custom click identifiers** are now **normalized and stored as strings**, as an update to ensure **uniformity and consistency** when reading identifiers from **cookies**, **LocalStorage**, or the **dataLayer**.
+
 
 ---
 
@@ -79,7 +85,7 @@ Enable checkboxes for any traffic parameters you'd like to capture:
 * **Campaign ID** (`utm_id`)
 * **Term**, **Content** – Additional UTM fields
 
-### **🆕** AI Overview Traffic Sources
+### **🤖** AI Overview Traffic Sources
 
 The Attribution Insight Tag now supports classifying **AI Overview (AIO) traffic sources**, such as **Featured Snippets**, **People Also Ask**, and **Google's AI Overviews**.  
 These traffic sources often rely on special **Text Fragments** in the URL (after `#:~:text=`), which highlight the portion of the page the user was sent to.
@@ -197,7 +203,87 @@ Enable checkboxes to capture:
    * Automatically fires a structured event with `marketing_data`, `click_identifiers`, and `datalayer_source`
 
 ---
+## ⚙️ First-Click Attribution Configuration  
 
+The **Attribution Insight Tag** now supports a dedicated **First-Click Attribution** feature, providing deeper attribution control and persistence across sessions.  
+
+---
+
+### 🔹 Enabling First-Click Attribution  
+
+Enable **“Enable First-Click Attribution Settings”** to activate the first-click storage logic.  
+
+**Choose your First-Click Attribution Storage Type:**  
+- **Use Separate Cookie Name** → Creates independent cookies for each data point  
+  *(e.g., `first_click_attr_gtm_dd_sep_source`, `first_click_attr_gtm_dd_sep_medium`).*  
+- **Use Single Cookie Name** → Combines all first-click values into a single JSON object stored under the **First-Click Attribution Cookie Name**.  
+
+**Configure:**  
+- **First-Click Attribution Cookie Name:** Used when storing data in a single cookie.  
+- **Use Custom Prefix:** For separate cookies, define your own prefix *(defaults to `first_click_attr_gtm_dd_sep_`)*.  
+- **Cookie Lifespan (Days):** Determines how long the first-click attribution data remains available in days.  
+
+---
+
+### 🔹 Storage and Persistence  
+
+When enabled, the tag stores a snapshot of:  
+- **Marketing Data** (*utm_source, utm_medium, utm_campaign, etc.*)  
+- **Click Identifiers** (*gclid, fbclid, msclkid, and any custom identifiers*)  
+
+These values are stored as either:  
+- Separate cookies *(per data point)*, or  
+- A single combined cookie, and  
+- Persisted in **LocalStorage** using the key (`gtm_dd_first_click_attr_data`).  
+
+Once created, **first-click cookies remain constant** for their defined lifespan — they won’t be overwritten by subsequent traffic, preserving **original attribution integrity**.  
+
+If **LocalStorage** contains valid first-click data but cookies are missing, the tag automatically restores the cookies.  
+
+---
+
+### 🔹 Updating Missing Click Identifiers  
+
+If first-click attribution data already exists (e.g., from a prior session) but some click identifiers weren’t initially captured, the tag automatically checks for missing identifiers on each page load.  
+
+When it detects new valid identifiers, they’re added to:  
+- The existing **first-click cookie(s)**  
+- The **LocalStorage** backup (`gtm_dd_first_click_attr_data`)  
+
+This ensures your **first-click record remains complete** without losing prior stored data.  
+
+---
+
+### 🔹Enabgle Data Layer Behavior  
+
+The **Data Layer push** follows a clear logic:  
+
+When **Data Layer Push** is enabled, the tag always pushes an event containing the :  
+
+```js
+{
+  event: "gtm_dd_marketing_traffic_data",
+  marketing_data: {...},
+  click_identifiers: {...},
+  datalayer_source: "dd gtm custom tag template"
+}
+```
+If the **“Push First-Click Attribution to Data Layer”** option is enabled, the tag appends the **first-click marketing data** object to the Data Layer.  
+
+```js
+
+first_click_attribution: {
+  marketing_data: {...},
+  data_point_source: "dd gtm custom tag template (first-click)"
+}
+```
+
+Only **marketing_data** from the first-click record is pushed —  
+**click identifiers** remain accessible only via **browser cookies** or **LocalStorage**,  
+preventing unnecessary bloating of the Data Layer and avoiding potential confusion in downstream analytics.  
+
+
+---
 ## 💼 Use Cases
 
 ### 📄 Lead Source Tracking
