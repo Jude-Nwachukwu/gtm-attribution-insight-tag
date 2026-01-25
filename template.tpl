@@ -1226,7 +1226,7 @@ if (data.ddFirstClickConfigSettings) {
       }
     } else if (useFirstClickSingle) {
       const val = getCookieValues(firstClickCookieName);
-      if (isValid(val)) setCookie(firstClickCookieName, val, firstClickOptions);
+      if (isValid(val)) setCookie(firstClickCookieName, val[0], firstClickOptions);
     }
     // Extend LocalStorage lifetime
     if (hasLSData) localStorage.setItem(lsKey, lsVal);
